@@ -50,7 +50,7 @@ class LoginController extends Controller
     {
 
         //Colombia: 216.239.55.176, Mexico: 216.239.55.24-201.143.47.225 Argentina: 217.146.28.0, Chile: 190.5.56.205
-        $arr_ip = geoip()->getLocation('190.5.56.205');
+        $arr_ip = geoip()->getLocation('216.239.55.176');
         $ip=    $arr_ip->ip;
         $pais=   $arr_ip->country;
         $ciudad= $arr_ip->city;
@@ -96,7 +96,7 @@ class LoginController extends Controller
         //Si la ciudad es "Mexico City" se reemplaza con "Mexico"
         $ciudad_fil=str_replace('Mexico City', 'Mexico', $ciudad_form);
         $fecha_form = $request->input('fecha_mod');
-
+        $ciudad_mod = $request->input('ciudad_mod');
 
         //Validación de credenciales de paciente
         $credentials = $this->validate(request(), [
@@ -133,12 +133,13 @@ class LoginController extends Controller
                     ->update(['ciudad' => $idciudad->idciudad]);
             }
 
+            //Actualiza ciudad seleccionada en tabla paciente.
+            if (!empty($ciudad_mod)) {
+                $updateCiudadMod= DB::table('paciente')
+                    ->where('id', Auth::user()->idpaciente)
+                    ->update(['ciudad' => $ciudad_mod]);
+            }
 
-            //hora de chile
-            //date_default_timezone_set('America/Santiago');
-            //$fechaChile= Date('d-m-Y H:i');
-
-            //$fecha_form = Date('d-m-Y H:i');
             $fechaChile= Carbon::now();
             $fechaChile= $fechaChile->format('d-m-Y H:i');
 
@@ -155,8 +156,41 @@ class LoginController extends Controller
             //concatenamos el signo, horas y minutos).
             $hdif= $signo.$horas.' '.$minutos;
 
-            //dd($hdif);
+            if (!empty($fecha_form)) {
+                //actualiza diferencia en horas y minutos tabla paciente
+                $updateDiff = DB::table('paciente')
+                    ->where('id', Auth::user()->idpaciente)
+                    ->update(['diff' => $hdif]);
+            }
 
+            if (!empty($zh_form)) {
+
+            //hora de chile
+            date_default_timezone_set('America/Santiago');
+            $fechaCh= Date('d-m-Y H:i');
+
+            //hora del paciente
+            date_default_timezone_set($zh_form);
+            $fechaPa= Date('d-m-Y H:i');
+
+            //obtenemos la diferencia en horas (chile y la del paciente).
+            $time1 = new DateTime($fechaCh);
+            $time2 = new DateTime($fechaPa);
+            $interval = $time1->diff($time2);
+
+            //obtenemos el signo (- ó + y la diferencia en horas y minutos)
+            $signo = $interval->format("%R");
+            $horas = $interval->format("%h hour");
+            $minutos = $interval->format("%i minute");
+
+            //concatenamos el signo, horas y minutos).
+            $hdif= $signo.$horas.' '.$minutos;
+
+            //Actualizar campo diff de paciente con datos geolocalizados
+                $updateDiffApi = DB::table('paciente')
+                    ->where('id', Auth::user()->idpaciente)
+                    ->update(['diff' => $hdif]);
+            }
         //redirección a hora
           return redirect()->route('hora');
 
@@ -167,7 +201,6 @@ class LoginController extends Controller
         //}
 
     }
-
     //función para salir de página principal y limpiar variables de sesión del paciente.
     public function logout()
 
@@ -175,6 +208,5 @@ class LoginController extends Controller
         Auth::logout();
         return redirect()->route('geoDatos');
     }
-
 
 }

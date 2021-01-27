@@ -2,11 +2,9 @@
 @section('title', "Inicio")
 
 @section('content')
-<body>
 <br/>
 <br/>
 <br/>
-
 <label for="pais">Pais:</label>
 <input type="text" id="pais" name="pais">
 <label for="ciudad">Ciudad:</label>

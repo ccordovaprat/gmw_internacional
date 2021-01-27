@@ -21,7 +21,9 @@ class Paciente extends Authenticatable
         'email',
         'telefono',
         'celular',
-        'isapre'
+        'isapre',
+        'diff',
+        'ciudad'
     ];
 
 }

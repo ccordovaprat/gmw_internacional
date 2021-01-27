@@ -3,8 +3,7 @@
 @section('content')
 
     <!--Modal para confirmar datos de geolocalización-->
-    <div class="modal fade" id="modalConfirmar" tabindex="-1" role="dialog" aria-labelledby="basicModal"
-         aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal fade" id="modalConfirmar" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -40,9 +39,7 @@
     </div>
 
     <!--Modal para modificar datos de geolocalización-->
-    <div class="modal fade" id="modalModificar" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true"
-         data-backdrop="static"
-         data-keyboard="false">
+    <div class="modal fade" id="modalModificar" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -75,7 +72,7 @@
                                 <div class="col mt-3">
                                     Fecha y hora:
                                     <input type="datetime-local" id="fecha"
-                                           name="fecha" value="" >
+                                           name="fecha" value="" required>
                                 </div>
                             </div>
                             </div>
@@ -93,13 +90,13 @@
                             <div class="row justify-content-center">
                                 <div class="col-md-8">
                                     <div class="card">
-                                        <div class="card-header">{{ __('Acceso') }}</div>
+                                        <div class="card-header">Acceso</div>
 
                                         <div class="card-body">
                                             <form method="POST" action="{{ route('login') }}">
                                                 @csrf
                                                 <input type="hidden" id="zh_paciente" name="zh_paciente" value="">
-                                                <input type="hidden" id="ciudad_paciente" name="ciudad_paciente" value="">
+                                                <input type="hidden" id="ciudad_paciente" name="ciudad_paciente" value="{{$ciudad}}">
                                                 <input type="hidden" id="pais_mod" name="pais_mod" value="">
                                                 <input type="hidden" id="ciudad_mod" name="ciudad_mod" value="">
                                                 <input type="hidden" id="fecha_mod" name="fecha_mod" value="">
@@ -175,59 +172,63 @@
                             </div>
                         </div>
                         @endsection
-                        @section('js')
-                            <script>
-                                //Carga el modal: "modalConfirmar" al cargar la página.
-                                $(document).ready(function () {
-                                    $("#modalConfirmar").modal("show");
-                                });
 
-                                //Carga el modal: "modificarDatos" al hacer clic en modificar.
-                                function modificarDatos() {
-                                    $("#modalConfirmar").modal("hide");
-                                    $("#modalModificar").modal("show");
+@section('js')
+    <script>
+        //Carga el modal: "modalConfirmar" al cargar la página.
+        $(document).ready(function () {
+            // $("#modalConfirmar").modal("show");
+        });
 
-                                }
+        //Carga el modal: "modificarDatos" al hacer clic en modificar.
+        function modificarDatos() {
+            $("#modalConfirmar").modal("hide");
+            $("#modalModificar").modal("show");
 
-                                //Carga el modal: "modificarDatos" al hacer clic en modificar.
-                                function confirmarDatos() {
-                                    var zh_p = @json($zonaHoraria);
-                                    var ciudad_p = @json($ciudad);
-                                    $('#zh_paciente').val(zh_p);
-                                    $('#ciudad_paciente').val(ciudad_p);
-                                    $("#modalConfirmar").modal("hide");
-                                }
+        }
 
-                                //Guardar datos una vez modificados por el paciente.
-                                function guardarDatosMod() {
-                                    $('#pais_mod').val($('#codigo_pais').val());
-                                    $('#ciudad_mod').val($('#codigo_ciudad').val());
-                                    $('#fecha_mod').val($('#fecha').val());
-                                    var fecha = $('#fecha_mod').val();
-                                    var d = new Date(fecha);
-                                    $('#fecha_mod').val(d.toLocaleString());
-                                    $("#modalModificar").modal("hide");
-                                }
+        //Carga el modal: "modificarDatos" al hacer clic en modificar.
+        function confirmarDatos() {
+            var zh_p = @json($zonaHoraria);
+            var ciudad_p = @json($ciudad);
+            $('#zh_paciente').val(zh_p);
+            $('#ciudad_paciente').val(ciudad_p);
+            $("#modalConfirmar").modal("hide");
+        }
 
-                                //Salir de modal
-                                function cancelar() {
-                                    $("#modalModificar").modal("hide");
-                                }
+        //Guardar datos una vez modificados por el paciente.
+        function guardarDatosMod() {
+            $('#pais_mod').val($('#codigo_pais').val());
+            $('#ciudad_mod').val($('#codigo_ciudad').val());
+            $('#fecha_mod').val($('#fecha').val());
+            var fecha = $('#fecha_mod').val();
+            var d = new Date(fecha);
+            $('#fecha_mod').val(d.toLocaleString());
+            $("#modalModificar").modal("hide");
+        }
 
-                                //Obtiene la ciudad
-                                $(document).ready(function(){
-                                    $("#codigo_pais").change(function(){
-                                        var pais = $(this).val();
-                                        $.get('geodatos/'+pais, function(data){
-                                            console.log(data);
-                                            var ciudad_select = '<option value="">Seleccione ciudad</option>'
-                                            for (var i=0; i<data.length;i++)
-                                                ciudad_select+='<option value="'+data[i].idciudad+'">'+data[i].ciudad+'</option>';
+        //Salir de modal
+        function cancelar() {
+            $("#modalModificar").modal("hide");
+        }
 
-                                            $("#codigo_ciudad").html(ciudad_select);
-                                        });
-                                    });
-                                });
+        //Obtiene la ciudad
+        $(document).ready(function(){
+            $("#codigo_pais").change(function(){
+                var pais = $(this).val();
 
-                            </script>
+                $.get('geodatos/'+pais, function(data){
+                    console.log(data);
+
+                    var ciudad_select = '<option value="">Seleccione ciudad</option>';
+
+                    for (var i=0; i<data.length;i++)
+                        ciudad_select+='<option value="'+data[i].idciudad+'">'+data[i].ciudad+'</option>';
+
+                    $("#codigo_ciudad").html(ciudad_select);
+                });
+            });
+        });
+
+    </script>
 @endsection

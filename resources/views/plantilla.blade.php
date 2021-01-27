@@ -41,7 +41,6 @@
             }
         }
     </style>
-<href></href>
     <!-- Custom styles for this template -->
     <link rel="stylesheet" href="{{asset('public/css/style.css')}}">
 </head>
