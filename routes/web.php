@@ -37,6 +37,4 @@ Route::post('/hora.grabarPorIp', 'PacienteController@grabarDatosPorIp')->name('h
 //Controlador Login
 Route::get('/logout', 'Auth\LoginController@logout')->name('logout');
 Route::post('/login', 'Auth\LoginController@login')->name('login');
-Route::get('/geodatos', 'Auth\LoginController@geoDatos')->name('geoDatos');
-Route::get('/geodatos/{pais}', 'Auth\LoginController@porPais')->name('porPais');
 

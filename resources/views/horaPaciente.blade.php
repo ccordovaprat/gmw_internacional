@@ -15,6 +15,7 @@
 @endsection
 
 @section('content')
+
     <!--Modal para confirmar datos de geolocalización-->
     <div class="modal fade" id="modalConfirmar" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <form class="form-horizontal" method="POST" action="{{ route('hora.grabarPorIp') }}" name="formGuardarPorIp" id="formGuardarPorIp">
@@ -22,7 +23,7 @@
             <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button"class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <h4>Por favor confirmanos si los siguientes datos son correctos:</h4>
@@ -52,7 +53,6 @@
                         <button type="submit" class="btn btn-primary" id="btnGuardarPorIP">
                             Registrar
                         </button>
-{{--                        <a data-dismiss="modal" class="btn btn-primary" onclick="confirmarDatos()">Confirmar</a>--}}
                         <a href="#modalModificar" data-dismiss="modal" class="btn btn-danger"
                            onclick="modificarDatos()">Modificar</a>
                     </div>
@@ -69,7 +69,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button"class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <h4>Por favor modifica los datos que no son correctos:</h4>
@@ -77,21 +77,21 @@
                         <div class="row">
                             <div class="col-md-5">
                                 Pais:
-                                <select id="codigo_pais" name="codigo_pais" class="form-control" required="required">
+                                <select id="codigo_pais" name="codigo_pais" class="form-control required">
                                     <option value="">Seleccione país</option>
                                     @foreach ($pais_lista as $p)
-                                        {{--                                            <option value="{{ $p->codigo}}" {{ ($p->codigo == old('codigo_pais',$codPais))?'selected':'' }} >{{ $p->pais }}</option>--}}
-                                        <option value="{{ $p->codigo}}">{{ $p->pais }}</option>
+                                        <option value="{{ $p->codigo}}" {{ ($p->codigo == old('codigo_pais',$codPais))?'selected':'' }} >{{ $p->pais }}</option>
+{{--                                        <option value="{{ $p->codigo}}">{{ $p->pais }}</option>--}}
                                     @endforeach
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 Ciudad:
-                                <select id="codigo_ciudad" name="codigo_ciudad" class="form-control" required="required">
+                                <select id="codigo_ciudad" name="codigo_ciudad" class="form-control required">
                                     <option value="">Seleccione ciudad</option>
-                                    {{--                                        @foreach ($ciudad_lista as $c)--}}
-                                    {{--                                            <option value="{{ $c->idciudad}}">{{ $c->ciudad }}</option>--}}
-                                    {{--                                        @endforeach--}}
+                                    @foreach ($ciudad_lista as $c)
+                                        <option value="{{ $c->idciudad}}" {{ ($c->idciudad == old('codigo_ciudad',$idResult))?'selected':'' }}>{{ $c->ciudad }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -99,17 +99,22 @@
                             <div class="col mt-3">
                                 Fecha y hora:
                                 <input type="datetime-local" id="fecha"
-                                       name="fecha" value="" required>
+                                       name="fecha" value="{!!date("Y-m-d", strtotime($fecha)).'T'.$hora!!}" class="required">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="alert alert-danger mt-2 d-none" id="erroresModalModificar">
+
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-{{--                    <a data-dismiss="modal" class="btn btn-primary" onclick="guardarDatosMod()">Guardar</a>--}}
+
                     <button type="submit" class="btn btn-primary" id="btnGuardarMod">
                         Registrar
                     </button>
-                    <a data-dismiss="modal" class="btn btn-danger" onclick="cancelar()">Cancelar</a>
+                    <a data-dismiss="modal" class="btn btn-danger" onclick="cancelarDatos()">Cancelar</a>
                 </div>
             </div>
         </div>
@@ -123,24 +128,26 @@
     <div class="row justify-content-center m-5">
         <div class="col-auto">
             <table class="table table-striped ">
-        <tr>
-            <th scope="col">Hora atención</th>
-            <th scope="col">Prestador</th>
-            <th scope="col">Prestación</th>
-        </tr>
-        <tbody>
-        <tr>
-            @foreach($paciente as $p)
-                <td>{{ date("Y-m-d H:i", strtotime($p->hora_atencion.$p->diff)) }}</td>
-                <td>{{$p->prestador}}</td>
-                <td>{{$p->prestacion}}</td>
-        </tr>
-        @endforeach
+            <thead>
+                <tr>
+                    <th scope="col">Hora atención</th>
+                    <th scope="col">Prestador</th>
+                    <th scope="col">Prestación</th>
+                </tr>
+            </thead>
 
-        </tbody>
-    </table>
-            <div/>
-            <div/>
+            <tbody>
+
+                @foreach($paciente as $p)
+                <tr>
+                    <td>{{ date("Y-m-d H:i", strtotime($p->hora_atencion.$p->diff)) }}</td>
+                    <td>{{$p->prestador}}</td>
+                    <td>{{$p->prestacion}}</td>
+                </tr>
+                @endforeach
+
+            </tbody>
+        </table>
 
         @else
     <p>No hay horas reservadas para el paciente</p>
@@ -157,7 +164,10 @@
                 function modificarDatos() {
                 $("#modalConfirmar").modal("hide");
                 $("#modalModificar").modal("show");
+                };
 
+                function cancelarDatos() {
+                    $("#modalModificar").modal("hide");
                 };
 
                 //Obtiene la ciudad
@@ -191,10 +201,33 @@
                             url: "{{ route('hora.grabarPorIp') }}",
                             data: dataString,
                             success: function(data) {
-                                //alert(data['apellidoPaterno']);
-                                $("#modalConfirmar").modal("hide");
-                                location.reload();
+                                if(data['flag']){
+                                    //Escondemos el modal Modificar
+                                    $("#modalConfirmar").modal("hide");
+                                    console.log(data);
 
+                                    //Si el paciente tiene horas asignadas..
+                                    if(data['horas'].length){
+                                        $("tbody").html("");
+
+                                        //Por cada uno de las horas, las agregamos al table
+                                        data['horas'].forEach(function(hora, indice){
+                                            console.log(indice, hora);
+                                            let tRowHTML = "<tr>" +
+                                                "<td>"+hora['hora_atencion']+"</td>" +
+                                                "<td>"+hora['prestador']+"</td>" +
+                                                "<td>"+hora['prestacion']+"</td>" +
+                                                "</tr>";
+                                            $("tbody").append(tRowHTML);
+                                        })
+                                    }
+                                }
+                            },
+                            error: function(x,z,y){
+                                console.warn(x);
+                                console.warn(z);
+                                console.warn(y);
+                                alert("Lamentablemente ha ocurrido un error");
                             }
                         });
 
@@ -215,9 +248,46 @@
                             url: "{{ route('hora.grabar') }}",
                             data: dataString,
                             success: function(data) {
-                                //alert(data['apellidoPaterno']);
-                                $("#modalModificar").modal("hide");
-                                location.reload();
+                                if(data['flag']){
+                                    //Escondemos el modal Modificar
+                                    $("#modalModificar").modal("hide");
+                                    console.log(data);
+
+                                    //Si el paciente tiene horas asignadas..
+                                    if(data['horas'].length){
+                                        $("tbody").html("");
+
+                                        //Por cada uno de las horas, las agregamos al table
+                                        data['horas'].forEach(function(hora, indice){
+                                            //console.log(k, hora);
+                                            let tRowHTML = "<tr>" +
+                                                "<td>"+hora['hora_atencion']+"</td>" +
+                                                "<td>"+hora['prestador']+"</td>" +
+                                                "<td>"+hora['prestacion']+"</td>" +
+                                                "</tr>";
+                                            $("tbody").append(tRowHTML);
+                                        })
+                                    }
+                                } else{
+                                    if(data["errors"]){
+
+                                        //Eliminamos la clase d-none para poder visualizar el alert de errores
+                                        $("#erroresModalModificar").removeClass("d-none");
+                                        //Dejamos el div solo con etiqueta ul
+                                        $("#erroresModalModificar").html("<ul></ul>");
+
+                                        // Mostramos cada uno de los errores almacenados en data.errors
+                                        $.each(data.errors, function(indice, error){
+                                            $("#erroresModalModificar ul").append('<li>' + error + '</li>');
+                                        });
+                                    }
+                                }
+                            },
+                            error: function(x,z,y){
+                                console.warn(x);
+                                console.warn(z);
+                                console.warn(y);
+                                alert("Lamentablemente ha ocurrido un error");
                             }
                         });
 
