@@ -49,6 +49,11 @@ class PacienteController extends Controller
             ->where('cod_pais', '=', $codPais)
             ->get();
 
+        //se obtiene las ciudades de la tabla: ciudad en bd sin filtro país.
+        $ciudad_lista_sf = DB::table('ciudad')
+            ->orderBy('ciudad', 'asc')
+            ->get();
+
         //para dejar seleccionada la ciudad se obtiene el nombre de la ciudad y el código del país.
         $idciudad = DB::table('ciudad')
             ->select('idciudad')
@@ -72,7 +77,7 @@ class PacienteController extends Controller
 
         //función que obtiene la ciudad en función del código del país.
 
-         return view('horaPaciente', compact('paciente','pais_lista','ciudad_lista','pais','ciudad','zonaHoraria','fecha','hora', 'diferencia','codPais','idResult'));
+         return view('horaPaciente', compact('paciente','pais_lista','ciudad_lista','pais','ciudad','zonaHoraria','fecha','hora', 'diferencia','codPais','idResult','ciudad_lista_sf'));
      }
 
     public function porPais($pais){
@@ -156,6 +161,77 @@ class PacienteController extends Controller
         }
         // fin ajax
 
+    public function grabarDatosGc(Request $request)
+    {
+
+
+        try {
+            // Formulario confirmar datos
+            if ($request->ajax()) {
+
+                $pais_gc= $request->input('paisGc');
+                $ciudad_gc= $request->input('horaGc');
+
+                $paciente =  Paciente::find(Auth::user()->idpaciente); // Crea objeto
+
+                //se obtiene el id de la ciudad en función del nombre de la ciudad.
+                $idpais= DB::table('pais')
+                    ->select('codigo')
+                    ->where('pais', '=',$pais_gc)
+                    ->first();
+
+                //se obtiene el id de la ciudad en función del nombre de la ciudad.
+                $idciudad= DB::table('ciudad')
+                    ->select('idciudad')
+                    ->where('ciudad', '=',$ciudad_gc)
+                    ->first();
+
+                $paciente->ciudad = $idciudad->idciudad;
+
+                //fecha y hora de Chile
+                $fechaChile= Carbon::now();
+                $fechaChile= $fechaChile->format('d-m-Y H:i');
+
+                //hora del paciente
+                date_default_timezone_set($request->input('zhIp'));
+                $fechaPa= Date('d-m-Y H:i');
+
+                //obtenemos la diferencia en horas (chile y la del paciente).
+                $time1 = new DateTime($fechaCh);
+                $time2 = new DateTime($fechaPa);
+                $interval = $time1->diff($time2);
+
+                //obtenemos el signo (- ó + y la diferencia en horas y minutos)
+                $signo = $interval->format("%R");
+                $horas = $interval->format("%h hour");
+                $minutos = $interval->format("%i minute");
+
+                //concatenamos el signo, horas y minutos).
+                $hdif= $signo.$horas.' '.$minutos;
+
+                $paciente->diff =  $hdif;
+                $paciente->save(); // guarda los registros
+
+                $horas = DB::table('paciente')
+                    ->join('hora', 'paciente.id', '=', 'hora.paciente')
+                    ->select('hora.hora_atencion', 'hora.prestador', 'hora.prestacion', 'paciente.diff')
+                    ->where('paciente', '=', Auth::user()->idpaciente)
+                    ->get();
+                $flag = true;
+
+            }
+        } catch(\Exception $e){
+            $flag = false;
+            $horas = [];
+        }
+
+        return response()->json([
+            "flag" => $flag,
+            "horas" => $horas
+        ]);
+
+    }
+
 
     public function grabarDatosGeo(Request $request)
     {
@@ -232,5 +308,7 @@ class PacienteController extends Controller
             "horas" => $horas
         ]);
     }
+
+
 
 }

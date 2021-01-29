@@ -80,87 +80,9 @@
 {{--Se comenta el siguiente código que utiliza la api geocoding que obtiene datos de la ubicación--}}
 {{--del paciente para ser usado en un futuro.--}}
 
-{{--<script>--}}
-{{--    function success(pos) {--}}
+<script>
 
-{{--        //función para obtener fecha--}}
-{{--        var curday = function (sp) {--}}
-{{--            today = new Date();--}}
-{{--            var dd = today.getDate();--}}
-{{--            var mm = today.getMonth() + 1; //As January is 0.--}}
-{{--            var yyyy = today.getFullYear();--}}
-
-{{--            if (dd < 10) dd = '0' + dd;--}}
-{{--            if (mm < 10) mm = '0' + mm;--}}
-{{--            return (mm + sp + dd + sp + yyyy);--}}
-{{--        };--}}
-{{--        //console.log(curday('/'));--}}
-{{--        //console.log(curday('-'));--}}
-
-{{--        //función para obtener la hora, minutos y segundos--}}
-{{--        var fechaHora = new Date();--}}
-{{--        var horas = fechaHora.getHours();--}}
-{{--        var minutos = fechaHora.getMinutes();--}}
-{{--        var segundos = fechaHora.getSeconds();--}}
-
-{{--        if (horas < 10) {--}}
-{{--            horas = '0' + horas;--}}
-{{--        }--}}
-{{--        if (minutos < 10) {--}}
-{{--            minutos = '0' + minutos;--}}
-{{--        }--}}
-{{--        if (segundos < 10) {--}}
-{{--            segundos = '0' + segundos;--}}
-{{--        }--}}
-
-{{--        //función para obtener zona horaria--}}
-{{--        var resolvedOptions = Intl.DateTimeFormat().resolvedOptions();--}}
-{{--        var zonaHoraria = resolvedOptions.timeZone;--}}
-
-{{--        $('#fecha').val(curday('-'));--}}
-{{--        $('#hora').val(horas);--}}
-{{--        $('#minutos').val(minutos);--}}
-
-{{--        var crd = pos.coords;--}}
-
-{{--        const KEY = "AIzaSyAwSfkmMbLAYTYWzekPTF91O8X3UBEbAYk";--}}
-{{--        let url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${crd.latitude},${crd.longitude}&key=${KEY}`;--}}
-{{--        fetch(url)--}}
-{{--            .then(response => response.json())--}}
-{{--            .then(data => {--}}
-{{--                console.log(data);--}}
-{{--                let parts = data.results[0].address_components;--}}
-
-{{--                parts.forEach(part => {--}}
-{{--                    if (part.types.includes("country")) {--}}
-{{--                        //we found "country" inside the data.results[0].address_components[x].types array--}}
-{{--                        document.body.insertAdjacentHTML(--}}
-{{--                            "beforeend",--}}
-{{--                            ``--}}
-{{--                        );--}}
-{{--                    }--}}
-
-{{--                    if (part.types.includes("administrative_area_level_3")) {--}}
-{{--                        document.body.insertAdjacentHTML(--}}
-{{--                            "beforeend",--}}
-{{--                            ``--}}
-{{--                        );--}}
-{{--                        $('#ciudad').val(part.long_name);--}}
-{{--                    }--}}
-{{--                    $('#pais').val(part.long_name);--}}
-{{--                });--}}
-{{--            })--}}
-{{--            .catch(err => console.warn(err.message));--}}
-
-{{--    };--}}
-
-{{--    function error(err) {--}}
-{{--        console.warn('ERROR(' + err.code + '): ' + err.message);--}}
-{{--    };--}}
-
-{{--    navigator.geolocation.getCurrentPosition(success, error);--}}
-
-{{--</script>--}}
+</script>
 </body>
 </html>
 
