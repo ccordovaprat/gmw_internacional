@@ -144,6 +144,11 @@ class PacienteController extends Controller
                 ->select('hora.hora_atencion', 'hora.prestador', 'hora.prestacion', 'paciente.diff')
                 ->where('paciente', '=', Auth::user()->idpaciente)
                 ->get();
+
+            foreach ($horas as $hora){
+                $hora->hora_atencion = date("H:i d-m-Y", strtotime($hora->hora_atencion.$paciente->diff));
+            }
+
             $flag = true;
 
         }
@@ -164,53 +169,52 @@ class PacienteController extends Controller
     public function grabarDatosGc(Request $request)
     {
 
-
         try {
             // Formulario confirmar datos
             if ($request->ajax()) {
 
-                $pais_gc= $request->input('paisGc');
-                $ciudad_gc= $request->input('horaGc');
+                $ciudadGc= $request->input('ciudadGc');
+                $fechaHora = $request->input('fechaGc').' '.$request->input('horaGc');
+                $codPaisGc = $request->input('codPaisGc');
+                $zonaHorariaGc = $request->input('zonaHorariaGc');
+
 
                 $paciente =  Paciente::find(Auth::user()->idpaciente); // Crea objeto
 
                 //se obtiene el id de la ciudad en función del nombre de la ciudad.
-                $idpais= DB::table('pais')
-                    ->select('codigo')
-                    ->where('pais', '=',$pais_gc)
-                    ->first();
-
-                //se obtiene el id de la ciudad en función del nombre de la ciudad.
-                $idciudad= DB::table('ciudad')
+                $idCiudad= DB::table('ciudad')
                     ->select('idciudad')
-                    ->where('ciudad', '=',$ciudad_gc)
+                    ->where('ciudad', '=',$ciudadGc)
+                    ->where('cod_pais', '=',$codPaisGc)
                     ->first();
 
-                $paciente->ciudad = $idciudad->idciudad;
+                $idZona= DB::table('zona_horaria')
+                    ->select('idzona')
+                    ->where('nombreZona', '=',$zonaHorariaGc)
+                    ->first();
+
+                $paciente->ciudad = $idCiudad->idciudad;
+                $paciente->zonaHoraria = $idZona->idzona;
 
                 //fecha y hora de Chile
                 $fechaChile= Carbon::now();
                 $fechaChile= $fechaChile->format('d-m-Y H:i');
 
-                //hora del paciente
-                date_default_timezone_set($request->input('zhIp'));
-                $fechaPa= Date('d-m-Y H:i');
-
                 //obtenemos la diferencia en horas (chile y la del paciente).
-                $time1 = new DateTime($fechaCh);
-                $time2 = new DateTime($fechaPa);
+                $time1 = new DateTime($fechaChile);
+                $time2 = new DateTime($fechaHora);
                 $interval = $time1->diff($time2);
 
                 //obtenemos el signo (- ó + y la diferencia en horas y minutos)
                 $signo = $interval->format("%R");
                 $horas = $interval->format("%h hour");
                 $minutos = $interval->format("%i minute");
-
                 //concatenamos el signo, horas y minutos).
                 $hdif= $signo.$horas.' '.$minutos;
 
                 $paciente->diff =  $hdif;
                 $paciente->save(); // guarda los registros
+
 
                 $horas = DB::table('paciente')
                     ->join('hora', 'paciente.id', '=', 'hora.paciente')
@@ -218,6 +222,10 @@ class PacienteController extends Controller
                     ->where('paciente', '=', Auth::user()->idpaciente)
                     ->get();
                 $flag = true;
+
+                foreach ($horas as $hora){
+                    $hora->hora_atencion = date("H:i d-m-Y", strtotime($hora->hora_atencion.$paciente->diff));
+                }
 
             }
         } catch(\Exception $e){
@@ -307,6 +315,100 @@ class PacienteController extends Controller
             "flag" => $flag,
             "horas" => $horas
         ]);
+
+
+    }
+
+
+    public function grabarDatosModGc(Request $request)
+    {
+
+       $fechaHora= $request->input('fechaModGc');
+       $codPais= $request->input('codigo_pais_Gc');
+       $nomCiudad= $request->input('codigo_ciudad_Gc');
+
+        try {
+            $validated = Validator::make($request->all(), [
+                'codigo_pais_Gc' => 'required',
+                'codigo_ciudad_Gc' => 'required',
+                'fechaModGc' => 'required'
+            ], [
+                'codigo_pais_Gc.required' => 'Debe seleccionar un pais',
+                'codigo_ciudad_Gc.required' => 'Debe seleccionar una ciudad',
+                'fechaModGc.required' => 'Debe seleccionar una fecha',
+            ]);
+
+            if($validated->fails()){
+                return response()->json([
+                    "flag" => false,
+                    "errors" => $validated->errors()
+                ]);
+            }
+
+            // Formulario modificar datos
+            if ($request->ajax()) {
+
+                //fecha y hora de Chile
+                $fechaChile= Carbon::now();
+                $fechaChile= $fechaChile->format('d-m-Y H:i');
+
+                //obtenemos la diferencia en horas (chile y la del paciente).
+                $time1 = new DateTime($fechaChile);
+                $time2 = new DateTime($fechaHora);
+                $interval = $time1->diff($time2);
+
+                //obtenemos el signo (- ó + y la diferencia en horas y minutos)
+                $signo = $interval->format("%R");
+                $horas = $interval->format("%h hour");
+                $minutos = $interval->format("%i minute");
+
+                //concatenamos el signo, horas y minutos).
+                $hdif= $signo.$horas.' '.$minutos;
+
+                //obtengo id ciudad
+
+                $idciudad = DB::table('ciudad')
+                    ->select('idciudad')
+                    ->where('cod_pais', '=', $codPais)
+                    ->where('ciudad', '=', $nomCiudad)
+                    ->first();
+
+                $paciente =  Paciente::find(Auth::user()->idpaciente);
+                $paciente->ciudad = $idciudad->idciudad;
+                $paciente->diff =  $hdif;
+
+                $paciente->save(); // guarda el registro
+
+                //horas reservadas del paciente
+                $horas = DB::table('paciente')
+                    ->join('hora', 'paciente.id', '=', 'hora.paciente')
+                    ->select('hora.hora_atencion', 'hora.prestador', 'hora.prestacion', 'paciente.diff')
+                    ->where('paciente', '=', Auth::user()->idpaciente)
+                    ->get();
+
+                $flag = true;
+
+                foreach ($horas as $hora){
+                    $hora->hora_atencion = date("H:i d-m-Y", strtotime($hora->hora_atencion.$paciente->diff));
+                }
+
+                // retorno de datos via json
+//            return response()->json(
+//                $paciente->toArray()
+//            );
+            }
+        } catch(\Exception $e){
+            $flag = false;
+            $horas = [];
+            echo $e;
+        }
+
+        return response()->json([
+            "flag" => $flag,
+            "horas" => $horas
+        ]);
+
+
     }
 
 

@@ -31,6 +31,7 @@ Route::get('/hora', 'PacienteController@horaPaciente')->name('hora')->middleware
 Route::get('/hora/{pais}', 'PacienteController@porPais')->name('horaPais');
 Route::post('/hora.grabar', 'PacienteController@grabarDatosGeo')->name('hora.grabar');
 Route::post('/hora.grabarGc', 'PacienteController@grabarDatosGc')->name('hora.grabarGc');
+Route::post('/hora.grabarModGc', 'PacienteController@grabarDatosModGc')->name('hora.grabarModGc');
 Route::post('/hora.grabarPorIp', 'PacienteController@grabarDatosPorIp')->name('hora.grabarPorIp');
 
 //Controlador Login
