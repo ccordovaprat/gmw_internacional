@@ -38,7 +38,7 @@
 
     <!--Modal para confirmar datos de geolocalización por Gc-->
     <div class="modal fade" id="modalConfirmarGc" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <form class="form-horizontal" method="POST" action="{{ route('hora.grabarGc') }}" name="formGuardarPorGc" id="formGuardarPorGc">
+        <form class="form-horizontal" method="POST" name="formGuardarPorGc" id="formGuardarPorGc">
             {{ csrf_field() }}
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -87,7 +87,7 @@
 
     <!--Modal para confirmar datos de geolocalización por IP-->
     <div class="modal fade" id="modalConfirmar" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <form class="form-horizontal" method="POST" action="{{ route('hora.grabarPorIp') }}" name="formGuardarPorIp" id="formGuardarPorIp">
+        <form class="form-horizontal" method="POST" name="formGuardarPorIp" id="formGuardarPorIp">
             {{ csrf_field() }}
             <div class="modal-dialog">
             <div class="modal-content">
@@ -134,7 +134,7 @@
 
     <!--Modal para modificar datos de geolocalización por IP-->
     <div class="modal fade" id="modalModificar" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <form class="form-horizontal" method="POST" action="{{ route('hora.grabar') }}" name="formGuardarMod" id="formGuardarMod">
+        <form class="form-horizontal" method="POST" name="formGuardarMod" id="formGuardarMod">
             {{ csrf_field() }}
         <div class="modal-dialog">
             <div class="modal-content">
@@ -193,7 +193,7 @@
 
     <!--Modal para modificar datos de geolocalización por Gc-->
     <div class="modal fade" id="modalModificarGc" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <form class="form-horizontal" method="POST" action="{{ route('hora.grabarModGc') }}" name="formGuardarModGc" id="formGuardarModGc">
+        <form class="form-horizontal" method="POST" name="formGuardarModGc" id="formGuardarModGc">
             {{ csrf_field() }}
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -228,7 +228,8 @@
                                 <div class="col mt-3">
                                     Fecha y hora:
                                     <input type="datetime-local" id="fechaModGc"
-                                           name="fechaModGc" value="{!!date("Y-m-d", strtotime($fecha)).'T'.$hora!!}" class="required">
+                                           name="fechaModGc" value="{!!date("Y-m-d", strtotime($fecha)).'T'.$hora!!}" class="required" readonly>
+                                    <input id="zhModGc" name="zhModGc" type="hidden" value="">
                                 </div>
                             </div>
                             <div class="row">
@@ -289,6 +290,8 @@
                 <script>
                 //Carga el modal: "modalConfirmar" al cargar la página.
                 function confirmarDatos() {
+                    //location.reload();
+
                     if ($('#flagTipoGeo').val() === 'OK') {
                         $("#modalConfirmarGc").modal("show");
 
@@ -328,7 +331,6 @@
                             console.log(data);
 
                             var ciudad_select
-                                //= '<option value="">Seleccione ciudad</option>';
 
                             for (var i=0; i<data.length;i++)
                                 ciudad_select+='<option value="'+data[i].idciudad+'">'+data[i].ciudad+'</option>';
@@ -348,7 +350,6 @@
                             console.log(data);
 
                             var ciudad_select
-                                //= '<option value="">Seleccione ciudad</option>';
 
                             for (var i=0; i<data.length;i++)
                                 ciudad_select+='<option value="'+data[i].ciudad+'">'+data[i].ciudad+'</option>';
@@ -369,16 +370,99 @@
                             console.log(data);
 
                             var ciudad_select
-                                //= '<option value="">Seleccione ciudad</option>';
 
                             for (var i=0; i<data.length;i++)
                                 ciudad_select+='<option value="'+data[i].ciudad+'">'+data[i].ciudad+'</option>';
 
                             $("#codigo_ciudad_Gc").html(ciudad_select);
 
+                            //Obtiene el texto de las opciones seleccionadas para país y ciudad.
+                            var ciudad = $('select[name="codigo_ciudad_Gc"] option:selected').text();
+                            var pa = $('select[name="codigo_pais_Gc"] option:selected').text();
+                            //Api geocoding obtiene el pais y la ciudad por latitud y longitud.
+                            const KEY = "AIzaSyDPZDsUbtqBGX3iP4CIkEUTubfWqbbIoFw";
+                            let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${pa},${ciudad}&key=${KEY}`;
+
+                            $.getJSON(url, function (data) {
+                                //alert('Latitud:'+data.results[0].geometry.location.lat+' Longitud:'+data.results[0].geometry.location.lng);
+                                var lat = data.results[0].geometry.location.lat;
+                                var lng = data.results[0].geometry.location.lng;
+
+                                //Api timezonedb obtiene zona horaria, fecha y hora por latitud y longitud.
+                                const PASS = "ES4SAOFV1XO0";
+                                let dir = `https://api.timezonedb.com/v2.1/get-time-zone?key=${PASS}&format=json&by=position&lat=${lat}&lng=${lng}`;
+                                fetch(dir)
+                                    .then(response => response.json())
+                                    .then(result=> {
+                                        let zonaHoraria = result.zoneName;
+                                        let horaFecha = result.formatted;
+
+                                        //alert(horaFecha+' '+pa+' '+ciudad);
+
+                                        var dateMod = moment(horaFecha).format("YYYY-MM-DD");
+                                        var timeMod = moment(horaFecha).format("HH:mm");
+
+                                        //asignar valores fecha y hora a los campos del formulario.
+                                        $('#fechaModGc').val(dateMod+'T'+timeMod);
+                                        $('#zhModGc').val(zonaHoraria);
+
+                                        //asignar valor a input zonaHorariaGc
+                                        //$('#zonaHorariaGc').val(zonaHoraria);
+
+                                    })
+                                    .catch(err => console.warn(err.message));
+                            });
+
                         });
                     });
                 });
+
+                //Obtiene la fecha y hora en función de la ciudad seleccionada
+                $(document).ready(function(){
+                    $("#codigo_ciudad_Gc").change(function(){
+
+                        //Obtiene el texto de las opciones seleccionadas para país y ciudad.
+                        var ciudad = $('select[name="codigo_ciudad_Gc"] option:selected').text();
+                        var pa = $('select[name="codigo_pais_Gc"] option:selected').text();
+
+                        //Api geocoding obtiene el pais y la ciudad por latitud y longitud.
+                        const KEY = "AIzaSyDPZDsUbtqBGX3iP4CIkEUTubfWqbbIoFw";
+                        let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${pa},${ciudad}&key=${KEY}`;
+
+                        $.getJSON(url, function (data) {
+                            //alert('Latitud:'+data.results[0].geometry.location.lat+' Longitud:'+data.results[0].geometry.location.lng);
+                            var lat = data.results[0].geometry.location.lat;
+                            var lng = data.results[0].geometry.location.lng;
+
+                            //Api timezonedb obtiene zona horaria, fecha y hora por latitud y longitud.
+                            const PASS = "ES4SAOFV1XO0";
+                            let dir = `https://api.timezonedb.com/v2.1/get-time-zone?key=${PASS}&format=json&by=position&lat=${lat}&lng=${lng}`;
+                            fetch(dir)
+                                .then(response => response.json())
+                                .then(result=> {
+                                    let zonaHoraria = result.zoneName;
+                                    let horaFecha = result.formatted;
+
+                                    //alert(horaFecha+' '+pa+' '+ciudad);
+
+                                    var dateMod = moment(horaFecha).format("YYYY-MM-DD");
+                                    var timeMod = moment(horaFecha).format("HH:mm");
+
+                                    //asignar valores fecha y hora a los campos del formulario.
+                                    $('#fechaModGc').val(dateMod+'T'+timeMod);
+                                    $('#zhModGc').val(zonaHoraria);
+
+                                    //asignar valor a input zonaHorariaGc
+                                    //$('#zonaHorariaGc').val(zonaHoraria);
+
+                                })
+                                .catch(err => console.warn(err.message));
+                        });
+
+
+                    });
+                });
+
                 //actualizar información formulario datos por Ip
                 $(document).ready(function()
                 {
@@ -645,30 +729,21 @@
 
                             parts.forEach(part => {
                                 if (part.types.includes("country")) {
-                                    //we found "country" inside the data.results[0].address_components[x].types array
-                                    document.body.insertAdjacentHTML(
-                                        "beforeend",
-                                        ``
-                                    );
+
+                                    $('#paisGc').val(part.long_name);
+                                    $('#codigo_pais_Gc').val(part.short_name);
+                                    $('#codPaisGc').val(part.short_name);
                                 }
 
                                 if (part.types.includes("administrative_area_level_3")) {
-                                    document.body.insertAdjacentHTML(
-                                        "beforeend",
-                                        ``
-                                    );
+
                                     $('#ciudadGc').val(part.long_name);
                                 }
-
-                                $('#paisGc').val(part.long_name);
-                                $('#codigo_pais_Gc').val(part.short_name);
-                                $('#codPaisGc').val(part.short_name);
 
                             });
 
                         })
                         .catch(err => console.warn(err.message));
-
                 };
 
                 //código se ejecuta cuando usuario interactua con las opciones de permiso

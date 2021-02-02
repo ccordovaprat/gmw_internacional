@@ -178,7 +178,6 @@ class PacienteController extends Controller
                 $codPaisGc = $request->input('codPaisGc');
                 $zonaHorariaGc = $request->input('zonaHorariaGc');
 
-
                 $paciente =  Paciente::find(Auth::user()->idpaciente); // Crea objeto
 
                 //se obtiene el id de la ciudad en función del nombre de la ciudad.
