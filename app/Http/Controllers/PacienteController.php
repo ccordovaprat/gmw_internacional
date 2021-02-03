@@ -98,7 +98,7 @@ class PacienteController extends Controller
             $ciudad_ip= $request->input('ciudadIp');
             $ciudad_fil=str_replace('Mexico City', 'Mexico', $ciudad_ip);
 
-            $paciente =  Paciente::find(Auth::user()->idpaciente); // Crea objeto
+            $paciente =  Paciente::find(Auth::user()->idpaciente);
 
             //se obtiene el id de la zona horaria en función del nombre de la zona horaria.
             $idzona= DB::table('zona_horaria')
@@ -112,6 +112,7 @@ class PacienteController extends Controller
                 ->where('ciudad', '=',$ciudad_fil)
                 ->first();
 
+            //actualización de zona horaria y ciudad.
             $paciente->zonaHoraria = $idzona->idzona;
             $paciente->ciudad = $idciudad->idciudad;
 
@@ -170,15 +171,15 @@ class PacienteController extends Controller
     {
 
         try {
+
             // Formulario confirmar datos
             if ($request->ajax()) {
 
                 $ciudadGc= $request->input('ciudadGc');
-                $fechaHora = $request->input('fechaGc').' '.$request->input('horaGc');
                 $codPaisGc = $request->input('codPaisGc');
                 $zonaHorariaGc = $request->input('zonaHorariaGc');
 
-                $paciente =  Paciente::find(Auth::user()->idpaciente); // Crea objeto
+                $paciente =  Paciente::find(Auth::user()->idpaciente);
 
                 //se obtiene el id de la ciudad en función del nombre de la ciudad.
                 $idCiudad= DB::table('ciudad')
@@ -195,13 +196,17 @@ class PacienteController extends Controller
                 $paciente->ciudad = $idCiudad->idciudad;
                 $paciente->zonaHoraria = $idZona->idzona;
 
-                //fecha y hora de Chile
-                $fechaChile= Carbon::now();
-                $fechaChile= $fechaChile->format('d-m-Y H:i');
+                //hora de chile
+                date_default_timezone_set('America/Santiago');
+                $fechaChile= Date('d-m-Y H:i');
+
+                //hora del paciente
+                date_default_timezone_set($zonaHorariaGc);
+                $fechaPa= Date('d-m-Y H:i');
 
                 //obtenemos la diferencia en horas (chile y la del paciente).
                 $time1 = new DateTime($fechaChile);
-                $time2 = new DateTime($fechaHora);
+                $time2 = new DateTime($fechaPa);
                 $interval = $time1->diff($time2);
 
                 //obtenemos el signo (- ó + y la diferencia en horas y minutos)
@@ -243,6 +248,8 @@ class PacienteController extends Controller
     public function grabarDatosGeo(Request $request)
     {
 
+
+        //Validación de campos requeridos en formulario.
         try {
             $validated = Validator::make($request->all(), [
                 'codigo_pais' => 'required',
@@ -264,13 +271,19 @@ class PacienteController extends Controller
             // Formulario modificar datos
             if ($request->ajax()) {
 
-                //fecha y hora de Chile
-                $fechaChile= Carbon::now();
-                $fechaChile= $fechaChile->format('d-m-Y H:i');
+                $zonaHoraria = $request->input('zonaHoraria');
+
+                //hora de chile
+                date_default_timezone_set('America/Santiago');
+                $fechaCh= Date('d-m-Y H:i');
+
+                //hora del paciente
+                date_default_timezone_set($zonaHoraria);
+                $fechaPa= Date('d-m-Y H:i');
 
                 //obtenemos la diferencia en horas (chile y la del paciente).
-                $time1 = new DateTime($fechaChile);
-                $time2 = new DateTime($request->input('fecha'));
+                $time1 = new DateTime($fechaCh);
+                $time2 = new DateTime($fechaPa);
                 $interval = $time1->diff($time2);
 
                 //obtenemos el signo (- ó + y la diferencia en horas y minutos)
@@ -281,8 +294,14 @@ class PacienteController extends Controller
                 //concatenamos el signo, horas y minutos).
                 $hdif= $signo.$horas.' '.$minutos;
 
-                $paciente =  Paciente::find(Auth::user()->idpaciente); // Crea objeto
+                $idzona = DB::table('zona_horaria')
+                    ->select('idzona')
+                    ->where('nombreZona', '=', $zonaHoraria)
+                    ->first();
+
+                $paciente =  Paciente::find(Auth::user()->idpaciente);
                 $paciente->ciudad = $request->input('codigo_ciudad');
+                $paciente->zonaHoraria = $idzona->idzona;
                 $paciente->diff =  $hdif;
 
                 $paciente->save(); // guarda el registro
@@ -300,10 +319,6 @@ class PacienteController extends Controller
                     $hora->hora_atencion = date("H:i d-m-Y", strtotime($hora->hora_atencion.$paciente->diff));
                 }
 
-                // retorno de datos via json
-//            return response()->json(
-//                $paciente->toArray()
-//            );
             }
         } catch(\Exception $e){
             $flag = false;
@@ -315,16 +330,11 @@ class PacienteController extends Controller
             "horas" => $horas
         ]);
 
-
     }
 
 
     public function grabarDatosModGc(Request $request)
     {
-
-       $fechaHora= $request->input('fechaModGc');
-       $codPais= $request->input('codigo_pais_Gc');
-       $nomCiudad= $request->input('codigo_ciudad_Gc');
 
         try {
             $validated = Validator::make($request->all(), [
@@ -347,12 +357,21 @@ class PacienteController extends Controller
             // Formulario modificar datos
             if ($request->ajax()) {
 
-                //fecha y hora de Chile
-                $fechaChile= Carbon::now();
-                $fechaChile= $fechaChile->format('d-m-Y H:i');
+                $fechaHora = $request->input('fechaModGc');
+                $codPais = $request->input('codigo_pais_Gc');
+                $nomCiudad = $request->input('codigo_ciudad_Gc');
+                $zonaHoraria = $request->input('zhModGc');
+
+                //hora de chile
+                date_default_timezone_set('America/Santiago');
+                $fechaCh= Date('d-m-Y H:i');
+
+                //hora del paciente
+                date_default_timezone_set($zonaHoraria);
+                $fechaPa= Date('d-m-Y H:i');
 
                 //obtenemos la diferencia en horas (chile y la del paciente).
-                $time1 = new DateTime($fechaChile);
+                $time1 = new DateTime($fechaCh);
                 $time2 = new DateTime($fechaHora);
                 $interval = $time1->diff($time2);
 
@@ -372,8 +391,14 @@ class PacienteController extends Controller
                     ->where('ciudad', '=', $nomCiudad)
                     ->first();
 
+                $idzona = DB::table('zona_horaria')
+                    ->select('idzona')
+                    ->where('nombreZona', '=', $zonaHoraria)
+                    ->first();
+
                 $paciente =  Paciente::find(Auth::user()->idpaciente);
                 $paciente->ciudad = $idciudad->idciudad;
+                $paciente->zonaHoraria = $idzona->idzona;
                 $paciente->diff =  $hdif;
 
                 $paciente->save(); // guarda el registro
@@ -391,10 +416,6 @@ class PacienteController extends Controller
                     $hora->hora_atencion = date("H:i d-m-Y", strtotime($hora->hora_atencion.$paciente->diff));
                 }
 
-                // retorno de datos via json
-//            return response()->json(
-//                $paciente->toArray()
-//            );
             }
         } catch(\Exception $e){
             $flag = false;

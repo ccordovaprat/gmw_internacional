@@ -150,7 +150,7 @@
                                 <select id="codigo_pais" name="codigo_pais" class="form-control required">
 {{--                                    <option value="">Seleccione país</option>--}}
                                     @foreach ($pais_lista as $p)
-                                        <option value="{{ $p->codigo}}" {{ ($p->codigo == old('codigo_pais',$codPais))?'selected':'' }} >{{ $p->pais }}</option>
+                                        <option value="{{ $p->codigo}}" {{ ($p->codigo == $codPais)?'selected':'' }} >{{ $p->pais }}</option>
 {{--                                        <option value="{{ $p->codigo}}">{{ $p->pais }}</option>--}}
                                     @endforeach
                                 </select>
@@ -160,7 +160,7 @@
                                 <select id="codigo_ciudad" name="codigo_ciudad" class="form-control required">
 {{--                                    <option value="">Seleccione ciudad</option>--}}
                                     @foreach ($ciudad_lista as $c)
-                                        <option value="{{ $c->idciudad}}" {{ ($c->idciudad == old('codigo_ciudad',$idResult))?'selected':'' }}>{{ $c->ciudad }}</option>
+                                        <option value="{{ $c->idciudad}}" {{ ($c->idciudad == $idResult)?'selected':'' }}>{{ $c->ciudad }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -169,7 +169,8 @@
                             <div class="col mt-3">
                                 Fecha y hora:
                                 <input type="datetime-local" id="fecha"
-                                       name="fecha" value="{!!date("Y-m-d", strtotime($fecha)).'T'.$hora!!}" class="required">
+                                       name="fecha" value="{!!date("Y-m-d", strtotime($fecha)).'T'.$hora!!}" readonly>
+                                <input id="zonaHoraria" name="zonaHoraria" type="hidden" value="{{  $zonaHoraria ?? '' }}" class="form-control">
                             </div>
                         </div>
                         <div class="row">
@@ -177,6 +178,8 @@
 
                             </div>
                         </div>
+                        <h6 class="text-center mt-4">En caso de que la fecha y hora no sean correctas, contáctese  con mesa de ayuda.</h6>
+
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -237,6 +240,7 @@
 
                                 </div>
                             </div>
+                            <h6 class="text-center mt-4">En caso de que la fecha y hora no sean correctas, contáctese  con mesa de ayuda.</h6>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -325,6 +329,12 @@
                 //Obtiene la ciudad Ip
                 $(document).ready(function(){
                     $("#codigo_pais").change(function(){
+
+                        //valido que al cambiar de pais existan ciudades sino hay ciudades actualizo select.
+                        var ciudad_select = '<option value=""></option>';
+                        $("#codigo_ciudad").html(ciudad_select);
+
+
                         var pais = $(this).val();
 
                         $.get('/hora/'+pais, function(data){
@@ -336,6 +346,43 @@
                                 ciudad_select+='<option value="'+data[i].idciudad+'">'+data[i].ciudad+'</option>';
 
                             $("#codigo_ciudad").html(ciudad_select);
+
+                            //Obtiene el texto de las opciones seleccionadas para país y ciudad.
+                            var ciudad = $('select[name="codigo_ciudad"] option:selected').text();
+                            var pa = $('select[name="codigo_pais"] option:selected').text();
+                            //Api geocoding obtiene el pais y la ciudad por latitud y longitud.
+                            const KEY = "AIzaSyDPZDsUbtqBGX3iP4CIkEUTubfWqbbIoFw";
+                            let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${pa},${ciudad}&key=${KEY}`;
+
+                            $.getJSON(url, function (data) {
+                                //alert('Latitud:'+data.results[0].geometry.location.lat+' Longitud:'+data.results[0].geometry.location.lng);
+                                var lat = data.results[0].geometry.location.lat;
+                                var lng = data.results[0].geometry.location.lng;
+
+                                //Api timezonedb obtiene zona horaria, fecha y hora por latitud y longitud.
+                                const PASS = "ES4SAOFV1XO0";
+                                let dir = `https://api.timezonedb.com/v2.1/get-time-zone?key=${PASS}&format=json&by=position&lat=${lat}&lng=${lng}`;
+                                fetch(dir)
+                                    .then(response => response.json())
+                                    .then(result=> {
+                                        let zonaHoraria = result.zoneName;
+                                        let horaFecha = result.formatted;
+
+                                        //alert(horaFecha+' '+pa+' '+ciudad);
+
+                                        var dateMod = moment(horaFecha).format("YYYY-MM-DD");
+                                        var timeMod = moment(horaFecha).format("HH:mm");
+
+                                        //asignar valores fecha y hora a los campos del formulario.
+                                        $('#fecha').val(dateMod+'T'+timeMod);
+                                        $('#zonaHoraria').val(zonaHoraria);
+
+                                        //asignar valor a input zonaHorariaGc
+                                        //$('#zonaHorariaGc').val(zonaHoraria);
+
+                                    })
+                                    .catch(err => console.warn(err.message));
+                            });
                         });
                     });
                 });
@@ -364,6 +411,10 @@
                 $(document).ready(function(){
                     $("#codigo_pais_Gc").change(function(){
 
+                        //valido que al cambiar de pais existan ciudades sino hay ciudades actualizo select.
+                        var ciudad_select = '<option value=""></option>';
+                        $("#codigo_ciudad_Gc").html(ciudad_select);
+
                         var pais = $(this).val();
 
                         $.get('/hora/'+pais, function(data){
@@ -383,6 +434,7 @@
                             const KEY = "AIzaSyDPZDsUbtqBGX3iP4CIkEUTubfWqbbIoFw";
                             let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${pa},${ciudad}&key=${KEY}`;
 
+                            //Obtiene la latitud y la longitud en función del país y ciudad
                             $.getJSON(url, function (data) {
                                 //alert('Latitud:'+data.results[0].geometry.location.lat+' Longitud:'+data.results[0].geometry.location.lng);
                                 var lat = data.results[0].geometry.location.lat;
@@ -417,7 +469,7 @@
                     });
                 });
 
-                //Obtiene la fecha y hora en función de la ciudad seleccionada
+                //Obtiene la fecha y hora en función de la ciudad seleccionada form geocoding
                 $(document).ready(function(){
                     $("#codigo_ciudad_Gc").change(function(){
 
@@ -429,6 +481,7 @@
                         const KEY = "AIzaSyDPZDsUbtqBGX3iP4CIkEUTubfWqbbIoFw";
                         let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${pa},${ciudad}&key=${KEY}`;
 
+                        //Obtiene la latitud y la longitud en función del país y ciudad
                         $.getJSON(url, function (data) {
                             //alert('Latitud:'+data.results[0].geometry.location.lat+' Longitud:'+data.results[0].geometry.location.lng);
                             var lat = data.results[0].geometry.location.lat;
@@ -451,6 +504,54 @@
                                     //asignar valores fecha y hora a los campos del formulario.
                                     $('#fechaModGc').val(dateMod+'T'+timeMod);
                                     $('#zhModGc').val(zonaHoraria);
+
+                                    //asignar valor a input zonaHorariaGc
+                                    //$('#zonaHorariaGc').val(zonaHoraria);
+
+                                })
+                                .catch(err => console.warn(err.message));
+                        });
+
+
+                    });
+                });
+
+                //Obtiene la fecha y hora en función de la ciudad seleccionada form ip
+                $(document).ready(function(){
+                    $("#codigo_ciudad").change(function(){
+
+                        //Obtiene el texto de las opciones seleccionadas para país y ciudad.
+                        var ciudad = $('select[name="codigo_ciudad"] option:selected').text();
+                        var pa = $('select[name="codigo_pais"] option:selected').text();
+
+                        //Api geocoding obtiene el pais y la ciudad por latitud y longitud.
+                        const KEY = "AIzaSyDPZDsUbtqBGX3iP4CIkEUTubfWqbbIoFw";
+                        let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${pa},${ciudad}&key=${KEY}`;
+
+                        //Obtiene la latitud y la longitud en función del país y ciudad
+                        $.getJSON(url, function (data) {
+                            //alert('Latitud:'+data.results[0].geometry.location.lat+' Longitud:'+data.results[0].geometry.location.lng);
+                            var lat = data.results[0].geometry.location.lat;
+                            var lng = data.results[0].geometry.location.lng;
+
+                            //Api timezonedb obtiene zona horaria, fecha y hora por latitud y longitud.
+                            const PASS = "ES4SAOFV1XO0";
+                            let dir = `https://api.timezonedb.com/v2.1/get-time-zone?key=${PASS}&format=json&by=position&lat=${lat}&lng=${lng}`;
+                            fetch(dir)
+                                .then(response => response.json())
+                                .then(result=> {
+                                    let zonaHoraria = result.zoneName;
+                                    let horaFecha = result.formatted;
+
+                                    //alert(horaFecha+' '+pa+' '+ciudad);
+
+                                    var dateMod = moment(horaFecha).format("YYYY-MM-DD");
+                                    var timeMod = moment(horaFecha).format("HH:mm");
+
+                                    //asignar valores fecha y hora a los campos del formulario.
+                                    $('#fecha').val(dateMod+'T'+timeMod);
+                                    $('#zonaHoraria').val(zonaHoraria);
+
 
                                     //asignar valor a input zonaHorariaGc
                                     //$('#zonaHorariaGc').val(zonaHoraria);
@@ -714,12 +815,15 @@
 
                                 //asignar valor a input zonaHorariaGc
                                 $('#zonaHorariaGc').val(zonaHoraria);
+                                $('#zhModGc').val(zonaHoraria);
+
+                            zhModGc
 
                         })
                         .catch(err => console.warn(err.message));
 
                     //Api geocoding obtiene el pais y la ciudad por latitud y longitud.
-                    const KEY = "";
+                    const KEY = "AIzaSyDPZDsUbtqBGX3iP4CIkEUTubfWqbbIoFw";
                     let url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${crd.latitude},${crd.longitude}&key=${KEY}`;
                     fetch(url)
                         .then(response => response.json())
