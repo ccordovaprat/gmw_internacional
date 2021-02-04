@@ -24,7 +24,6 @@ class GeolocalizacionController extends Controller
         //dd($arr_ip);
         return view('geolocalizacion', compact('ip', 'pais', 'ciudad','zonaHoraria','moneda','fecha','hora'));
 
-
         //obtiene ip cliente
         //dd($request->ip());
     }

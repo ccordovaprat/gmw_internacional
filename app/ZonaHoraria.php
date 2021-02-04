@@ -12,8 +12,8 @@ class ZonaHoraria extends Authenticatable
 
     public $timestamps = false;
     protected $table = 'zona_horaria';
-    protected $primaryKey = 'idzona';
     protected $fillable = [
+        'idzona',
         'codigoZona',
         'nombreZona'
     ];

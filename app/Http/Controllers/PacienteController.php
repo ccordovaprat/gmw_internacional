@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Paciente;
 use App\Hora;
+use App\Pais;
+use App\Ciudad;
+use App\ZonaHoraria;
 use DB;
 use DateTime;
 use Auth;
@@ -18,13 +21,7 @@ class PacienteController extends Controller
     public function horaPaciente(Request $request)
 
     {
-        //horas reservadas del paciente
-        $paciente = DB::table('paciente')
-            ->join('hora', 'paciente.id', '=', 'hora.paciente')
-            ->select('hora.hora_atencion', 'hora.prestador', 'hora.prestacion', 'paciente.diff')
-            ->where('paciente', '=', Auth::user()->idpaciente)
-            ->get();
-
+        //Geolocalización por IP
         //Colombia: 216.239.55.176, Mexico: 216.239.55.24-201.143.47.225 Argentina: 217.146.28.0, Chile: 190.5.56.205
         $arr_ip = geoip()->getLocation('216.239.55.176');
         $ip = $arr_ip->ip;
@@ -38,26 +35,29 @@ class PacienteController extends Controller
         $hora = Date('H:i');
         $codPais = $arr_ip->iso_code;
 
-        //se obtiene los paises de la tabla: pais en bd.
-        $pais_lista = DB::table('pais')
-            ->orderBy('pais', 'asc')
+        //horas reservadas del paciente
+        $paciente  = Paciente::select('hora.hora_atencion','hora.prestador','hora.prestacion','paciente.diff')
+            ->join('hora', 'paciente.id', '=', 'hora.paciente')
+            ->select('hora.hora_atencion', 'hora.prestador', 'hora.prestacion', 'paciente.diff')
+            ->where('paciente', '=', Auth::user()->idpaciente)
             ->get();
+
+        //se obtiene los paises de la tabla: pais en bd.
+        $pais_lista = Pais::orderBy('pais','asc')->get();
+
 
         //se obtiene las ciudades de la tabla: ciudad en bd.
-        $ciudad_lista = DB::table('ciudad')
-            ->orderBy('ciudad', 'asc')
-            ->where('cod_pais', '=', $codPais)
+        $ciudad_lista = Ciudad::where('cod_pais','=',$codPais)
+            ->orderBy('ciudad','asc')
             ->get();
+
 
         //se obtiene las ciudades de la tabla: ciudad en bd sin filtro país.
-        $ciudad_lista_sf = DB::table('ciudad')
-            ->orderBy('ciudad', 'asc')
-            ->get();
+        $ciudad_lista_sf = Ciudad::orderBy('ciudad','asc')->get();
 
         //para dejar seleccionada la ciudad se obtiene el nombre de la ciudad y el código del país.
-        $idciudad = DB::table('ciudad')
-            ->select('idciudad')
-            ->where('ciudad', '=', $ciudad)
+        $idciudad = Ciudad::select('idciudad')
+            ->where('ciudad','=',$ciudad)
             ->where('cod_pais', '=', $codPais)
             ->first();
 
@@ -68,21 +68,20 @@ class PacienteController extends Controller
         }
 
          //horas reservadas del paciente
-         $diferencia  = DB::table('paciente')
-             ->select('diff')
-             ->where('id', '=', Auth::user()->idpaciente)
-             ->first();
+        $diferencia= Paciente::select('diff')
+            ->where('id', '=', Auth::user()->idpaciente)
+            ->first();
 
          $diferencia = $diferencia->diff;
-
-        //función que obtiene la ciudad en función del código del país.
 
          return view('horaPaciente', compact('paciente','pais_lista','ciudad_lista','pais','ciudad','zonaHoraria','fecha','hora', 'diferencia','codPais','idResult','ciudad_lista_sf'));
      }
 
     public function porPais($pais){
 
-        $ciudadDep = DB::table('ciudad')->where('cod_pais', $pais)->get();
+        $ciudadDep = Ciudad::where('cod_pais','=',$pais)
+            ->orderBy('ciudad','asc')
+            ->get();
 
         return $ciudadDep;
     }
@@ -101,14 +100,12 @@ class PacienteController extends Controller
             $paciente =  Paciente::find(Auth::user()->idpaciente);
 
             //se obtiene el id de la zona horaria en función del nombre de la zona horaria.
-            $idzona= DB::table('zona_horaria')
-                ->select('idzona')
-                ->where('nombrezona', '=',$zh_ip)
+            $idzona= ZonaHoraria::select('idzona')
+                ->where('nombrezona', '=', $zh_ip)
                 ->first();
 
             //se obtiene el id de la ciudad en función del nombre de la ciudad.
-            $idciudad= DB::table('ciudad')
-                ->select('idciudad')
+            $idciudad= Ciudad::select('idciudad')
                 ->where('ciudad', '=',$ciudad_fil)
                 ->first();
 
@@ -140,7 +137,7 @@ class PacienteController extends Controller
             $paciente->diff =  $hdif;
             $paciente->save(); // guarda los registros
 
-            $horas = DB::table('paciente')
+            $horas  = Paciente::select('hora.hora_atencion','hora.prestador','hora.prestacion','paciente.diff')
                 ->join('hora', 'paciente.id', '=', 'hora.paciente')
                 ->select('hora.hora_atencion', 'hora.prestador', 'hora.prestacion', 'paciente.diff')
                 ->where('paciente', '=', Auth::user()->idpaciente)
@@ -156,6 +153,7 @@ class PacienteController extends Controller
         } catch(\Exception $e){
                 $flag = false;
                 $horas = [];
+                echo $e;
             }
 
         return response()->json([
@@ -182,15 +180,15 @@ class PacienteController extends Controller
                 $paciente =  Paciente::find(Auth::user()->idpaciente);
 
                 //se obtiene el id de la ciudad en función del nombre de la ciudad.
-                $idCiudad= DB::table('ciudad')
-                    ->select('idciudad')
-                    ->where('ciudad', '=',$ciudadGc)
-                    ->where('cod_pais', '=',$codPaisGc)
+                $idCiudad = Ciudad::select('idciudad')
+                    ->where('ciudad','=',$ciudadGc)
+                    ->where('cod_pais', '=', $codPaisGc)
                     ->first();
 
-                $idZona= DB::table('zona_horaria')
-                    ->select('idzona')
-                    ->where('nombreZona', '=',$zonaHorariaGc)
+
+                //$idZona= DB::table('zona_horaria')
+                $idZona= ZonaHoraria::select('idzona')
+                    ->where('nombrezona', '=', $zonaHorariaGc)
                     ->first();
 
                 $paciente->ciudad = $idCiudad->idciudad;
@@ -220,11 +218,12 @@ class PacienteController extends Controller
                 $paciente->save(); // guarda los registros
 
 
-                $horas = DB::table('paciente')
+                $horas  = Paciente::select('hora.hora_atencion','hora.prestador','hora.prestacion','paciente.diff')
                     ->join('hora', 'paciente.id', '=', 'hora.paciente')
                     ->select('hora.hora_atencion', 'hora.prestador', 'hora.prestacion', 'paciente.diff')
                     ->where('paciente', '=', Auth::user()->idpaciente)
                     ->get();
+
                 $flag = true;
 
                 foreach ($horas as $hora){
@@ -307,7 +306,7 @@ class PacienteController extends Controller
                 $paciente->save(); // guarda el registro
 
                 //horas reservadas del paciente
-                $horas = DB::table('paciente')
+                $horas  = Paciente::select('hora.hora_atencion','hora.prestador','hora.prestacion','paciente.diff')
                     ->join('hora', 'paciente.id', '=', 'hora.paciente')
                     ->select('hora.hora_atencion', 'hora.prestador', 'hora.prestacion', 'paciente.diff')
                     ->where('paciente', '=', Auth::user()->idpaciente)
@@ -404,7 +403,7 @@ class PacienteController extends Controller
                 $paciente->save(); // guarda el registro
 
                 //horas reservadas del paciente
-                $horas = DB::table('paciente')
+                $horas  = Paciente::select('hora.hora_atencion','hora.prestador','hora.prestacion','paciente.diff')
                     ->join('hora', 'paciente.id', '=', 'hora.paciente')
                     ->select('hora.hora_atencion', 'hora.prestador', 'hora.prestacion', 'paciente.diff')
                     ->where('paciente', '=', Auth::user()->idpaciente)
@@ -428,9 +427,7 @@ class PacienteController extends Controller
             "horas" => $horas
         ]);
 
-
     }
-
 
 
 }
