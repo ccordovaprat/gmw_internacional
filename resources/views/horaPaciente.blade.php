@@ -4,14 +4,14 @@
 @section('headerdiv1')
 <ul class="navbar-nav me-auto mb-2 mb-md-0">
     <li class="nav-item">
-        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Bienvenido: {{ Auth::user()->name }}</a>
+        <a class="nav-link disabled" tabindex="-1" aria-disabled="true" id="user">Bienvenido: {{ Auth::user()->name }}</a>
     </li>
 </ul>
 @endsection
 
 @section('headerdiv2')
-<a class="nav-link btn-dark" onclick="confirmarDatos()">Geolocalización</a>
-<a class="nav-link btn-dark" href="/logout">Salir</a>
+<a class="nav-link btn-dark m-1" onclick="confirmarDatos()">Geolocalización</a>
+<a class="nav-link btn-dark m-1" href="/logout">Salir</a>
 @endsection
 
 @section('content')
@@ -251,8 +251,14 @@
     </form>
 </div>
 
-<br />
-<p class="text-center">Lorem ipsum dolor sit amet consectetur adipiscing elit, purus tellus accumsan suspendisse vestibulum commodo sociis est, luctus lacus tempor volutpat netus a. Sodales lacinia odio justo consequat mus tempus maecenas ante quam, ut suscipit torquent scelerisque elementum mauris senectus gravida, integer placerat sapien arcu a facilisis taciti et. Pulvinar velit aliquet mi sollicitudin potenti sociis condimentum morbi nam, arcu bibendum tempor eget nascetur leo suscipit dis habitasse faucibus, vivamus lobortis per nullam nec vehicula parturient cras.</p>
+{{--div mensaje de exito al guardar--}}
+<div class="container" id="contenedor">
+    <div class="alert alert-success m-2 d-none" id="exito">
+
+    </div>
+</div>
+
+<p class="text-center mt-3">Lorem ipsum dolor sit amet consectetur adipiscing elit, purus tellus accumsan suspendisse vestibulum commodo sociis est, luctus lacus tempor volutpat netus a. Sodales lacinia odio justo consequat mus tempus maecenas ante quam, ut suscipit torquent scelerisque elementum mauris senectus gravida, integer placerat sapien arcu a facilisis taciti et. Pulvinar velit aliquet mi sollicitudin potenti sociis condimentum morbi nam, arcu bibendum tempor eget nascetur leo suscipit dis habitasse faucibus, vivamus lobortis per nullam nec vehicula parturient cras.</p>
 
 @if ($paciente->isNotEmpty())
 <div class="row justify-content-center m-5">
@@ -284,9 +290,7 @@
         @endif
         @endsection
         @section('js')
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous"></script>
-
+        <script src="{{ asset('js/moment.js') }}"></script>
         <script>
             //Carga el modal: "modalConfirmar" al cargar la página.
             function confirmarDatos() {
@@ -324,6 +328,7 @@
 
             //Obtiene la ciudad Ip
             $(document).ready(function() {
+
                 $("#codigo_pais").change(function() {
 
                     //valido que al cambiar de pais existan ciudades sino hay ciudades actualizo select.
@@ -350,7 +355,9 @@
                         const KEY = "AIzaSyDPZDsUbtqBGX3iP4CIkEUTubfWqbbIoFw";
                         let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${pa},${ciudad}&key=${KEY}`;
 
-                        $.getJSON(url, function(data) {
+                        fetch(url)
+                            .then(response => response.json())
+                            .then(data => {
                             //alert('Latitud:'+data.results[0].geometry.location.lat+' Longitud:'+data.results[0].geometry.location.lng);
                             var lat = data.results[0].geometry.location.lat;
                             var lng = data.results[0].geometry.location.lng;
@@ -430,7 +437,9 @@
                         let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${pa},${ciudad}&key=${KEY}`;
 
                         //Obtiene la latitud y la longitud en función del país y ciudad
-                        $.getJSON(url, function(data) {
+                        fetch(url)
+                            .then(response => response.json())
+                            .then(data => {
                             var lat = data.results[0].geometry.location.lat;
                             var lng = data.results[0].geometry.location.lng;
 
@@ -474,7 +483,9 @@
                     let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${pa},${ciudad}&key=${KEY}`;
 
                     //Obtiene la latitud y la longitud en función del país y ciudad
-                    $.getJSON(url, function(data) {
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
                         //alert('Latitud:'+data.results[0].geometry.location.lat+' Longitud:'+data.results[0].geometry.location.lng);
                         var lat = data.results[0].geometry.location.lat;
                         var lng = data.results[0].geometry.location.lng;
@@ -519,7 +530,9 @@
                     let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${pa},${ciudad}&key=${KEY}`;
 
                     //Obtiene la latitud y la longitud en función del país y ciudad
-                    $.getJSON(url, function(data) {
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
                         //alert('Latitud:'+data.results[0].geometry.location.lat+' Longitud:'+data.results[0].geometry.location.lng);
                         var lat = data.results[0].geometry.location.lat;
                         var lng = data.results[0].geometry.location.lng;
@@ -550,7 +563,6 @@
                             .catch(err => console.warn(err.message));
                     });
 
-
                 });
 
                 //actualizar información formulario datos por Ip
@@ -568,7 +580,12 @@
                             if (data['flag']) {
                                 //Escondemos el modal Modificar
                                 $("#modalConfirmar").modal("hide");
-                                console.log(data);
+                                //console.log(data);
+                                //Mensaje de éxito al grabar datos de geolocalización
+                                $("#exito").removeClass("d-none");
+                                $("#exito").show();
+                                $("#exito").html("<p>Datos de geolocalización guardados correctamente.</p>");
+                                $("#exito").delay(2000).hide(600);
 
                                 //Si el paciente tiene horas asignadas..
                                 if (data['horas'].length) {
@@ -612,7 +629,11 @@
                             if (data['flag']) {
                                 //Escondemos el modal Modificar
                                 $("#modalConfirmarGc").modal("hide");
-                                console.log(data);
+                                //Mensaje de éxito al grabar datos de geolocalización
+                                $("#exito").removeClass("d-none");
+                                $("#exito").show();
+                                $("#exito").html("<p>Datos de geolocalización guardados correctamente.</p>");
+                                $("#exito").delay(2000).hide(600);
 
                                 //Si el paciente tiene horas asignadas..
                                 if (data['horas'].length) {
@@ -656,8 +677,11 @@
                             if (data['flag']) {
                                 //Escondemos el modal Modificar
                                 $("#modalModificar").modal("hide");
-                                console.log(data);
-
+                                //Mensaje de éxito al grabar datos de geolocalización
+                                $("#exito").removeClass("d-none");
+                                $("#exito").show();
+                                $("#exito").html("<p>Datos de geolocalización guardados correctamente.</p>");
+                                $("#exito").delay(2000).hide(600);
                                 //Si el paciente tiene horas asignadas..
                                 if (data['horas'].length) {
                                     $("tbody").html("");
@@ -712,7 +736,11 @@
                             if (data['flag']) {
                                 //Escondemos el modal Modificar
                                 $("#modalModificarGc").modal("hide");
-                                console.log(data);
+                                //Mensaje de éxito al grabar datos de geolocalización
+                                $("#exito").removeClass("d-none");
+                                $("#exito").show();
+                                $("#exito").html("<p>Datos de geolocalización guardados correctamente.</p>");
+                                $("#exito").delay(2000).hide(600);
 
                                 //Si el paciente tiene horas asignadas..
                                 if (data['horas'].length) {

@@ -161,7 +161,6 @@ class PacienteController extends Controller
             "horas" => $horas
         ]);
 
-
         }
         // fin ajax
 

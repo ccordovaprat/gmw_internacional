@@ -23,24 +23,10 @@
     <link rel="icon" href="/docs/5.0/assets/img/favicons/favicon.ico">
     <meta name="theme-color" content="#7952b3">
 
-
-    <style>
-        .bd-placeholder-img {
-            font-size: 1.125rem;
-            text-anchor: middle;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            user-select: none;
-        }
-
-        @media (min-width: 768px) {
-            .bd-placeholder-img-lg {
-                font-size: 3.5rem;
-            }
-        }
-    </style>
     <!-- Custom styles for this template -->
-    <link rel="stylesheet" href="{{asset('public/css/style.css')}}">
+    <link rel="stylesheet" href="{{asset('css/style.css')}}">
+    <link href="{{ asset('css/estiloPlantilla.css') }}" rel="stylesheet">
+
 </head>
 <body class="d-flex flex-column h-100">
 
@@ -63,24 +49,10 @@
         </div>
     </div>
 </main>
-
-{{--<footer class="footer mt-auto py-3 bg-light">--}}
-{{--    <div class="container">--}}
-{{--        <span class="text-muted">Place sticky footer content here.</span>--}}
-{{--    </div>--}}
-{{--</footer>--}}
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
-<script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
-        crossorigin="anonymous"></script>
+<script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ asset('js/jquery-3.5.1.js') }}"></script>
 @yield('js')
 
-{{--Se comenta el siguiente código que utiliza la api geocoding que obtiene datos de la ubicación--}}
-{{--del paciente para ser usado en un futuro.--}}
-
-<script>
-
-</script>
 </body>
 </html>
 

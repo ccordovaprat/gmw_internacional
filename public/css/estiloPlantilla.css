@@ -1,0 +1,49 @@
+.bd-placeholder-img {
+    font-size: 1.125rem;
+    text-anchor: middle;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+@media (min-width: 768px) {
+    .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+    }
+}
+
+#doc, #pass {
+
+    text-align: right;
+
+}
+
+#acceso
+{
+    font-weight: bold;
+}
+
+#contenedor
+{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+}
+
+#exito
+{
+    height: 10%;
+    width: 40%;
+    text-align: center;
+
+}
+
+table, th, td {
+    text-align: center;
+}
+
+#user
+{
+    color: whitesmoke;
+}
